@@ -17,7 +17,7 @@ configure_uploads(app, packages)
 PACKAGES_LIST_FILE = "packages.list"
 MANIFEST_FILE_NAME = "package-manifest.json"
 
-CLAMD_SOCKET = "/tmp/clamd.socket"
+CLAMD_SOCKET = os.environ['CLAMDSOCKET']
 
 if not os.path.isdir(app.config['UPLOADED_PACKAGES_DEST']):
 	os.mkdir(app.config['UPLOADED_PACKAGES_DEST'])
