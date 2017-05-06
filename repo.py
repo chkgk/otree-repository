@@ -4,6 +4,7 @@ from flask import Flask, request
 from flask_uploads import * 
 import os
 import json
+import pyclamd
 from zipfile import ZipFile
 
 app = Flask(__name__)
@@ -16,23 +17,31 @@ configure_uploads(app, packages)
 PACKAGES_LIST_FILE = "packages.list"
 MANIFEST_FILE_NAME = "package-manifest.json"
 
+CLAMD_SOCKET = "/tmp/clamd.socket"
+
+
 
 @app.route("/put", methods=['POST'])
 def put():
+	cd = pyclamd.ClamdUnixSocket(CLAMD_SOCKET)
+
 	if request.method == 'POST' and 'package' in request.files:
 		try:
 			filename = packages.save(request.files['package'])
+			if cd.scan_file(os.getcwd()+ "/" + app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename) != None:
+				os.remove(os.getcwd()+ "/" + app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename)
+				return "virus detected, file rejected\n", 400
 
 		except UploadNotAllowed:
-			return "wrong filetype", 415
+			return "wrong filetype\n", 415
 
 		manifest = _read_manifest(app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename)
 		package_list = _read_package_list()
 		new_package_list = _add_or_update(package_list, manifest, filename)
 		_write_package_list(new_package_list)
 
-		return "all good", 200
-	return "bad request", 400
+		return "all good\n", 200
+	return "bad request\n", 400
 
 
 @app.route("/get/<package_name>")
@@ -42,7 +51,7 @@ def get(package_name):
 	path = app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename
 	if os.path.isfile(path):
 		return send_from_directory(app.config['UPLOADED_PACKAGES_DEST'], filename)
-	return "file not found", 404
+	return "file not found\n", 404
 
 
 @app.route("/list")
@@ -63,7 +72,7 @@ def detail(package_name):
 	package_list = _read_package_list()
 	pos = _get_package_pos(package_name, package_list)
 	if pos == -1:
-		return "not found", 404
+		return "not found\n", 404
 	else:
 		detail_object = {}
 		for key in package_list[pos].keys():
