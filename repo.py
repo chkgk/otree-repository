@@ -96,7 +96,7 @@ def _write_package_list(packages_list):
 def _read_package_list():
 	try:
 		package_list = json.load(open('packages.list', 'r'))
-	except json.decoder.JSONDecodeError:
+	except ValueError:
 		package_list = []
 	return package_list
 
