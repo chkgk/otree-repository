@@ -1,3 +1,6 @@
 .DS_STORE
 .git
 /venv/
+__pycache__
+packages.list
+*.zip
