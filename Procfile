@@ -1,1 +1,1 @@
-web: python3 repo.py
+web: gunicorn repo:app
