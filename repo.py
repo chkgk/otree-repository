@@ -19,6 +19,11 @@ MANIFEST_FILE_NAME = "package-manifest.json"
 
 CLAMD_SOCKET = "/tmp/clamd.socket"
 
+if not os.path.isdir(app.config['UPLOADED_PACKAGES_DEST']):
+	os.mkdir(app.config['UPLOADED_PACKAGES_DEST'])
+
+if not os.path.isfile(PACKAGES_LIST_FILE):
+	open(PACKAGES_LIST_FILE, 'a').close()
 
 
 @app.route("/put", methods=['POST'])
