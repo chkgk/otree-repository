@@ -2,14 +2,20 @@
 
 from flask import Flask, request
 from flask_uploads import * 
+
+
+
 import os
 import json
 import pyclamd
 from zipfile import ZipFile
 
+
+
+
 app = Flask(__name__)
 
-app.config['UPLOADED_PACKAGES_DEST'] = 'packages'
+app.config['UPLOADED_PACKAGES_DEST'] = os.environ["UPLOADED_PACKAGES_DEST"]
 
 packages = UploadSet('packages', ARCHIVES)
 configure_uploads(app, packages)

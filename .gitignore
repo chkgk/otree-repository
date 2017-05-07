@@ -1,5 +1,6 @@
 .DS_STORE
 .git
+.env
 /venv/
 /__pycache__/
 packages.list
