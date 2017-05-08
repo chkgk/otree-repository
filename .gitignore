@@ -7,3 +7,4 @@ packages.list
 *.zip
 *.pyc
 *.egg*
+default_config.py

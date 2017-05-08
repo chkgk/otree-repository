@@ -1,4 +1,4 @@
-from otree_repository import app, csrf
+from otree_repository import app, csrf, config
 
 import os
 import json
@@ -82,7 +82,7 @@ def index():
 @csrf.exempt
 def put():
 	# needs to be re-written for th packages database. currently works with files.
-	cd = pyclamd.ClamdUnixSocket(CLAMD_SOCKET)
+	cd = pyclamd.ClamdUnixSocket(app.config['CLAMD_SOCKET'])
 
 	if request.method == 'POST' and 'package' in request.files:
 		try:
@@ -228,4 +228,4 @@ def _read_manifest(zip_filepath):
 		raise FileNotFoundError(zip_filepath)
 
 	with ZipFile(zip_filepath, 'r') as zip_file:
-		return json.loads(zip_file.read(MANIFEST_FILE_NAME).decode())
+		return json.loads(zip_file.read(app.config['MANIFEST_FILE_NAME']).decode())

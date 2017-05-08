@@ -11,47 +11,15 @@ from flask_uploads import *
 
 import datetime, os
 
+import otree_repository.default_config as config
+
+
 app = Flask(__name__)
-
-PACKAGES_LIST_FILE = "packages.list"
-MANIFEST_FILE_NAME = "package-manifest.json"
-CLAMD_SOCKET = os.environ['CLAMDSOCKET']
-
-
-
-app.config['UPLOADED_PACKAGES_DEST'] = os.environ["UPLOADED_PACKAGES_DEST"]
-app.config['DEBUG'] = True
-
-app.config['SECRET_KEY'] = 'super-secret'
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ["DB_URI"]
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-app.config['SECURITY_PASSWORD_HASH'] = 'bcrypt'
-app.config['SECURITY_PASSWORD_SALT'] = 'super_secret_salt'
-app.config['SECURITY_EMAIL_SENDER'] = 'no-reply-otree-repo@ckgk.de'
-app.config['SECURITY_CONFIRMABLE'] = True
-app.config['SECURITY_REGISTERABLE'] = True
-app.config['SECURITY_RECOVERABLE'] = True
-app.config['SECURITY_CHANGEABLE'] = True
-app.config['SECURITY_TRACKABLE'] = True
-app.config['SECURITY_POST_LOGOUT_VIEW'] = 'login'
-app.config['SECURITY_POST_REGISTER_VIEW'] = 'list'
-app.config['SECURITY_POST_CONFIRM_VIEW'] = 'list'
-
-
-app.config['MAIL_SERVER'] = 'ckgk.de'
-app.config['MAIL_PORT'] = 25
-app.config['MAIL_USE_SSL'] = False
-app.config['MAIL_USE_TSL'] = True
-app.config['MAIL_USERNAME'] = 'no-reply-otree-repo@ckgk.de'
-app.config['MAIL_PASSWORD'] = '7Wd-BvU-4cq-n8V'
+app.config.from_object(config)
 
 
 if not os.path.isdir(app.config['UPLOADED_PACKAGES_DEST']):
 	os.mkdir(app.config['UPLOADED_PACKAGES_DEST'])
-
-if not os.path.isfile(PACKAGES_LIST_FILE):
-	open(PACKAGES_LIST_FILE, 'a').close()
 
 
 csrf = CSRFProtect(app)
