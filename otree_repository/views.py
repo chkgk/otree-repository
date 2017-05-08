@@ -1,4 +1,5 @@
-from otree_repository import app, csrf
+from otree_repository import app, csrf, db, user_datastore
+from otree_repository.models import * 
 
 import os
 import json
@@ -14,7 +15,7 @@ from flask_security.forms import LoginForm
 from flask_wtf.csrf import CSRFProtect
 from werkzeug.datastructures import MultiDict
 
-from flask import request, url_for, render_template
+from flask import request, url_for, render_template, jsonify
 
 
 @user_registered.connect_via(app)
@@ -22,7 +23,6 @@ def on_registration(sender, user, confirm_token):
 	default_role = user_datastore.find_role('user')
 	user_datastore.add_role_to_user(user, default_role)
 	db.session.commit()
-
 
 
 # create user to test with
@@ -69,7 +69,6 @@ def _is_valid_user(user, password):
 		print("e")
 		return False
 	return True
-
 
 
 @app.route("/")
@@ -134,21 +133,6 @@ def put():
 	return "bad request\n", 400
 
 
-def _is_valid_author(uid):
-	user = User.query.filter_by(id=uid).first()
-	return user is not None
-
-
-def _version_exists(package, version):
-	for item in package.versions:
-		if item.version == version:
-			return True
-	return False
-
-
-def _remove_file(filename):
-	os.remove(os.getcwd()+ "/" + app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename)
-
 @app.route("/api/get/<package_name>")
 @app.route("/api/get/<package_name>/<version>")
 def get(package_name, version=""):
@@ -177,9 +161,33 @@ def get(package_name, version=""):
 	return "file not found\n", 404
 
 
+@app.route("/api/info/<package_name>")
+def detail(package_name):
+	package = Package.query.filter_by(name=package_name).first()
+	if package is None:
+		return "package not found\n", 404
+
+	versions = []
+	for version in package.versions:
+		versions.append({
+			"version": version.version,
+			"created": version.created 
+		})
+
+	package_info = {
+		"name": package.name,
+		"description": package.description,
+		"creator": package.creator.name,
+		"created": package.created,
+		"versions": versions
+	}
+
+	return jsonify(package_info)
+
+
 @app.route("/api/list")
 def api_list():
-	# needs to be re-written for th packages database. currently works with files.
+	# needs to be re-written for the packages database. currently works with files.
 	package_list = _read_package_list()
 	clean_list = []
 	for package in package_list:
@@ -191,41 +199,24 @@ def api_list():
 	return json.dumps(clean_list)
 
 
-@app.route("/api/detail/<package_name>")
-def detail(package_name):
-	# needs to be re-written for th packages database. currently works with files.
-	package_list = _read_package_list()
-	pos = _get_package_pos(package_name, package_list)
-	if pos == -1:
-		return "not found\n", 404
-	else:
-		detail_object = {}
-		for key in package_list[pos].keys():
-			if key != "filename":
-				detail_object[key] = package_list[pos][key]
-		return json.dumps(detail_object)
-
-
-def _get_package_pos(package_name, package_list):
-	package_names = [package["package-name"] for package in package_list]
-	if not package_name in package_names:
-		pos = -1
-	else:
-		pos = next(index for (index, d) in enumerate(package_list) if d["package-name"] == package_name)
-	return pos
-
-
-def _get_filename(package_name, package_list):
-	pos = _get_package_pos(package_name, package_list)
-	if pos != -1:
-		return package_list[pos]["filename"]
-	else:
-		raise FileNotFoundError(package_name)
-
-
 def _read_manifest(zip_filepath):
 	if not os.path.isfile(zip_filepath):
 		raise FileNotFoundError(zip_filepath)
 
 	with ZipFile(zip_filepath, 'r') as zip_file:
 		return json.loads(zip_file.read(app.config['MANIFEST_FILE_NAME']).decode())
+
+
+def _is_valid_author(uid):
+	user = User.query.filter_by(id=uid).first()
+	return user is not None
+
+
+def _version_exists(package, version):
+	for item in package.versions:
+		if item.version == version:
+			return True
+	return False
+
+def _remove_file(filename):
+	os.remove(os.getcwd()+ "/" + app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename)

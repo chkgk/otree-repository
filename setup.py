@@ -8,6 +8,7 @@ setup(
         'flask',
         'flask-security',
         'flask-sqlalchemy',
-        'pyclamd'
+        'pyclamd',
+        'mysqlclient'
     ],
 )

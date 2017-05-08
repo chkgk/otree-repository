@@ -25,10 +25,11 @@ if not os.path.isdir(app.config['UPLOADED_PACKAGES_DEST']):
 	os.mkdir(app.config['UPLOADED_PACKAGES_DEST'])
 
 from otree_repository.models import *
-import otree_repository.views
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
+
+import otree_repository.views
 
 if __name__ == "__main__":
 	app.run()
