@@ -1,4 +1,4 @@
-from otree_repository import app, csrf, config
+from otree_repository import app, csrf
 
 import os
 import json

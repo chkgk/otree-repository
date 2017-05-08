@@ -11,24 +11,15 @@ from flask_uploads import *
 
 import datetime, os
 
-import otree_repository.default_config as config
-
-
 app = Flask(__name__)
-app.config.from_object(config)
-
-
-if not os.path.isdir(app.config['UPLOADED_PACKAGES_DEST']):
-	os.mkdir(app.config['UPLOADED_PACKAGES_DEST'])
-
+app.config.from_envvar('OTREE_REPOSITORY_SETTINGS')
 
 csrf = CSRFProtect(app)
 mail = Mail(app)
 db = SQLAlchemy(app)
-
-
 packages = UploadSet('packages', ARCHIVES)
 configure_uploads(app, packages)
+
 
 
 # Models
@@ -106,6 +97,11 @@ class Package(db.Model):
 
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
+
+
+if not os.path.isdir(app.config['UPLOADED_PACKAGES_DEST']):
+	os.mkdir(app.config['UPLOADED_PACKAGES_DEST'])
+
 
 import otree_repository.views
 
