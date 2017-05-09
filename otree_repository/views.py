@@ -1,4 +1,4 @@
-from otree_repository import app, csrf, db, user_datastore
+from otree_repository import app, csrf, db, user_datastore, packages
 from otree_repository.models import * 
 from otree_repository.exceptions import *
 
@@ -8,6 +8,7 @@ import pyclamd
 from zipfile import ZipFile
 
 from flask_security import login_required, user_registered, login_user, auth_token_required
+from flask_uploads import send_from_directory
 
 from flask_security.confirmable import requires_confirmation
 from flask_security.utils import verify_and_update_password, encrypt_password
@@ -87,7 +88,7 @@ def put():
 	if request.method == 'POST' and 'package' in request.files:
 		try:
 			filename = packages.save(request.files['package'])
-			if cd.scan_file(os.getcwd()+ "/" + app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename) != None:
+			if cd.scan_file(app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename) != None:
 				_remove_file(filename)
 				raise InvalidUsage("virus detected, package rejected", 400)
 
@@ -156,11 +157,10 @@ def get(package_name, version=""):
 	if version_obj is None:
 		raise InvalidUsage("version not found", 404)
 
-	path = app.config['UPLOADED_PACKAGES_DEST'] + "/" + version_obj.filename
-	#print(path)
-	if os.path.isfile(path):
+	if os.path.isfile(app.config['UPLOADED_PACKAGES_DEST'] + "/" + version_obj.filename):
 		return send_from_directory(app.config['UPLOADED_PACKAGES_DEST'], version_obj.filename)
-	return "file not found\n", 404
+
+	raise InvalidUsage('file not found', 404)
 
 
 @app.route("/api/info/<package_name>")
@@ -200,7 +200,7 @@ def api_list():
 
 def _read_manifest(zip_filepath):
 	if not os.path.isfile(zip_filepath):
-		raise FileNotFoundError(zip_filepath)
+		raise InvalidUsage("file not found", 404)
 
 	with ZipFile(zip_filepath, 'r') as zip_file:
 		return json.loads(zip_file.read(app.config['MANIFEST_FILE_NAME']).decode())

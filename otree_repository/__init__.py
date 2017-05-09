@@ -7,7 +7,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_security import Security, SQLAlchemyUserDatastore
 from flask_wtf.csrf import CSRFProtect
 from flask_mail import Mail
-from flask_uploads import * 
+from flask_uploads import UploadSet, configure_uploads, ARCHIVES
 
 import datetime, os
 
@@ -17,7 +17,7 @@ app.config.from_envvar('OTREE_REPOSITORY_SETTINGS')
 csrf = CSRFProtect(app)
 mail = Mail(app)
 db = SQLAlchemy(app)
-packages = UploadSet('packages', ARCHIVES)
+packages = UploadSet('packages', ARCHIVES, default_dest=app.config['UPLOADED_PACKAGES_DEST'])
 configure_uploads(app, packages)
 
 
