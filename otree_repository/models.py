@@ -63,7 +63,7 @@ class Package(db.Model):
 	description = db.Column(db.Text)
 	created = db.Column(db.DateTime())
 	user_id = db.Column(db.Integer(), db.ForeignKey("user.id"))
-	versions = db.relationship('Version', secondary=packages_versions, order_by=Version.version)
+	versions = db.relationship('Version', secondary=packages_versions, order_by=Version.version, lazy='dynamic')
 
 	def __init__(self, name, user_id, description=""):
 		self.name = name

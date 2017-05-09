@@ -187,16 +187,13 @@ def detail(package_name):
 
 @app.route("/api/list")
 def api_list():
-	# needs to be re-written for the packages database. currently works with files.
-	package_list = _read_package_list()
-	clean_list = []
-	for package in package_list:
-		p_object = {}
-		for key in package.keys():
-			if key != "filename":
-				p_object[key] = package[key]
-		clean_list.append(p_object)
-	return json.dumps(clean_list)
+
+	return_items = [
+		{ "name": package.name, "description": package.description }
+		for package in Package.query.all()
+	]
+		
+	return jsonify(return_items)
 
 
 def _read_manifest(zip_filepath):
@@ -217,6 +214,7 @@ def _version_exists(package, version):
 		if item.version == version:
 			return True
 	return False
+
 
 def _remove_file(filename):
 	os.remove(os.getcwd()+ "/" + app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename)
