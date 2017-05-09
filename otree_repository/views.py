@@ -1,5 +1,6 @@
 from otree_repository import app, csrf, db, user_datastore
 from otree_repository.models import * 
+from otree_repository.exceptions import *
 
 import os
 import json
@@ -88,17 +89,17 @@ def put():
 			filename = packages.save(request.files['package'])
 			if cd.scan_file(os.getcwd()+ "/" + app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename) != None:
 				_remove_file(filename)
-				return "virus detected, file rejected\n", 400
+				raise InvalidUsage("virus detected, package rejected", 400)
 
 		except UploadNotAllowed:
-			return "wrong filetype\n", 415
+			raise InvalidUsage("filetype not allowed", 400)
 
 		manifest = _read_manifest(app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename)
 		
 		# check if author id is valid
 		if not _is_valid_author(manifest["package-author"]):
 			_remove_file(filename)
-			return "invalid author id\n", 400
+			raise InvalidUsage("invalid author", 400)
 
 		# let's check if a package exists:
 		package = Package.query.filter_by(name=manifest["package-name"]).first()
@@ -112,12 +113,12 @@ def put():
 		# later we can do this based on auth_token
 		if not package.user_id == int(manifest["package-author"]):
 			_remove_file(filename)
-			return "not your package\n", 400
+			raise InvalidUsage("not your package", 400)
 
 		# check if version exists
 		if _version_exists(package, manifest["package-version"]):
 			_remove_file(filename)
-			return "version already exists\n", 400
+			raise InvalidUsage("version already exists", 400)
 
 		#update description
 		package.description = manifest["package-description"]
@@ -129,8 +130,9 @@ def put():
 		# store
 		db.session.add(package)
 		db.session.commit()
-		return "all good\n", 200
-	return "bad request\n", 400
+		return jsonify({ 'status_code': 200, 'message': 'put completed'})
+
+	raise InvalidUsage("bad request", 404)
 
 
 @app.route("/api/get/<package_name>")
@@ -139,7 +141,7 @@ def get(package_name, version=""):
 	
 	package = Package.query.filter_by(name=package_name).first()
 	if package is None:
-		return "package not found\n", 404
+		raise InvalidUsage("package not found", 404)
 
 	version_obj = None
 
@@ -152,7 +154,7 @@ def get(package_name, version=""):
 				break
 
 	if version_obj is None:
-		return "file not found\n", 404
+		raise InvalidUsage("version not found", 404)
 
 	path = app.config['UPLOADED_PACKAGES_DEST'] + "/" + version_obj.filename
 	#print(path)
@@ -165,7 +167,7 @@ def get(package_name, version=""):
 def detail(package_name):
 	package = Package.query.filter_by(name=package_name).first()
 	if package is None:
-		return "package not found\n", 404
+		raise InvalidUsage("package not found", 404)
 
 	versions = []
 	for version in package.versions:
