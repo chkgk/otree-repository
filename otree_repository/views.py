@@ -1,4 +1,4 @@
-from otree_repository import app, csrf, db, user_datastore, packages
+from otree_repository import app, csrf, db, user_datastore, packages, security
 from otree_repository.models import * 
 from otree_repository.exceptions import *
 
@@ -7,7 +7,7 @@ import json
 import pyclamd
 from zipfile import ZipFile
 
-from flask_security import login_required, user_registered, login_user, auth_token_required
+from flask_security import login_required, user_registered, login_user, auth_token_required, roles_required
 from flask_uploads import send_from_directory
 
 from flask_security.confirmable import requires_confirmation
@@ -54,32 +54,13 @@ def api_login():
 	return "bad request\n", 400
 
 
-def _is_valid_user(user, password):
-	if user is None:
-		print("a")
-		return False
-	if not user.password:
-		print("b")
-		return False
-	if not verify_and_update_password(password, user):
-		print("c")
-		return False
-	if requires_confirmation(user):
-		print("d")
-		return False
-	if not user.is_active:
-		print("e")
-		return False
-	return True
-
-
 @app.route("/")
 def index():
 	return "all good", 200
 
 
 @app.route("/put", methods=['POST'])
-#@auth_token_required
+@auth_token_required
 @csrf.exempt
 def put():
 	# needs to be re-written for th packages database. currently works with files.
@@ -188,6 +169,8 @@ def detail(package_name):
 
 
 @app.route("/api/list")
+@auth_token_required
+@roles_required('admin')
 def api_list():
 
 	return_items = [
@@ -196,6 +179,10 @@ def api_list():
 	]
 		
 	return jsonify(return_items)
+
+@app.route("/unauthorized")
+def unauthorized():
+	return jsonify({"status_code": 403, "message": "not authorized"})
 
 
 def _read_manifest(zip_filepath):
@@ -220,3 +207,22 @@ def _version_exists(package, version):
 
 def _remove_file(filename):
 	os.remove(os.getcwd()+ "/" + app.config['UPLOADED_PACKAGES_DEST'] + "/" + filename)
+
+
+def _is_valid_user(user, password):
+	if user is None:
+		print("a")
+		return False
+	if not user.password:
+		print("b")
+		return False
+	if not verify_and_update_password(password, user):
+		print("c")
+		return False
+	if requires_confirmation(user):
+		print("d")
+		return False
+	if not user.is_active:
+		print("e")
+		return False
+	return True

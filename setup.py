@@ -9,6 +9,7 @@ setup(
         'flask-security',
         'flask-sqlalchemy',
         'pyclamd',
-        'mysqlclient'
+        'mysqlclient',
+        'bcrypt'
     ],
 )
